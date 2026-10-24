@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tally: Budget Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eef1f4;--surf:#fff;--ink:#14213d;--mute:#5d6b82;--line:#d9dfe7;--ok:#1f7a5c;--warn:#b86a12;--bad:#c2413b;--btn:#14213d;--btn-ink:#fff;color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1621;--surf:#172231;--ink:#e8edf5;--mute:#93a1b8;--line:#263548;--ok:#4cc79c;--warn:#e6a04a;--bad:#ef7b74;--btn:#e8edf5;--btn-ink:#0e1621;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0e1621;--surf:#172231;--ink:#e8edf5;--mute:#93a1b8;--line:#263548;--ok:#4cc79c;--warn:#e6a04a;--bad:#ef7b74;--btn:#e8edf5;--btn-ink:#0e1621;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:400 16px/1.45 "Instrument Sans",system-ui,-apple-system,"Segoe UI",sans-serif;font-variant-numeric:tabular-nums;min-height:100%}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--ok);outline-offset:2px}
+main{max-width:480px;margin:0 auto;padding:20px 20px 120px}
+header{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:28px}
+header b{font-size:20px;letter-spacing:-.02em}
+header span{color:var(--mute);font-size:14px}
+.hero p{margin:0;color:var(--mute);font-size:15px}
+.big{font-size:64px;font-weight:700;letter-spacing:-.04em;line-height:1.05;margin:4px 0 6px}
+.big.bad{color:var(--bad)}
+.track{position:relative;height:10px;border-radius:5px;background:var(--line);margin:22px 0 8px}
+.fill{position:absolute;inset:0 auto 0 0;border-radius:5px;background:var(--ok)}
+.fill.warn{background:var(--warn)}.fill.bad{background:var(--bad)}
+.tick{position:absolute;top:-5px;bottom:-5px;width:2px;background:var(--ink);border-radius:1px}
+.cap{display:flex;justify-content:space-between;color:var(--mute);font-size:13px}
+h2{font-size:15px;font-weight:600;margin:32px 0 12px}
+.row{padding:12px 0;border-top:1px solid var(--line)}
+.row .top{display:flex;justify-content:space-between;gap:12px;font-weight:500}
+.row .sub{color:var(--mute);font-size:13px;font-weight:400}
+.row .track{margin:10px 0 4px;height:6px}
+.row .tick{top:-3px;bottom:-3px}
+.tx{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+.tx small{display:block;color:var(--mute);font-size:13px}
+.amt.in{color:var(--ok)}
+.del{background:none;border:0;color:var(--mute);font-size:13px;padding:6px 0 6px 10px}
+.empty{color:var(--mute);padding:24px 0}
+.lim{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+.lim input{width:110px;text-align:right;background:var(--surf);border:1px solid var(--line);border-radius:10px;padding:9px 12px}
+nav{position:fixed;left:0;right:0;bottom:0;background:var(--surf);border-top:1px solid var(--line);padding:8px 12px calc(8px + env(safe-area-inset-bottom,0px))}
+nav div{max-width:480px;margin:0 auto;display:flex;gap:6px;align-items:center;justify-content:space-between}
+.tab{flex:1;background:none;border:0;padding:10px 4px;border-radius:10px;color:var(--mute);font-weight:500}
+.tab[aria-current="true"]{color:var(--ink);background:var(--bg)}
+.add{background:var(--btn);color:var(--btn-ink);border:0;border-radius:12px;padding:11px 18px;font-weight:600}
+.scrim{position:fixed;inset:0;background:rgba(10,16,26,.5);opacity:0;pointer-events:none;transition:opacity .2s}
+.scrim.on{opacity:1;pointer-events:auto}
+.sheet{position:fixed;left:0;right:0;bottom:0;background:var(--surf);border-radius:20px 20px 0 0;padding:20px 20px calc(20px + env(safe-area-inset-bottom,0px));transform:translateY(105%);transition:transform .25s;max-width:480px;margin:0 auto}
+.sheet.on{transform:none}
+.seg{display:flex;background:var(--bg);border-radius:12px;padding:4px;margin-bottom:16px}
+.seg button{flex:1;border:0;background:none;padding:9px;border-radius:9px;font-weight:500;color:var(--mute)}
+.seg button[aria-pressed="true"]{background:var(--surf);color:var(--ink);box-shadow:0 0 0 1px var(--line)}
+.sheet input[type=text],.sheet input[type=number]{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:12px}
+.sheet #amt{font-size:28px;font-weight:700}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.chip{border:1px solid var(--line);background:none;border-radius:999px;padding:7px 12px;font-size:14px}
+.chip[aria-pressed="true"]{background:var(--btn);color:var(--btn-ink);border-color:var(--btn)}
+.go{width:100%;background:var(--btn);color:var(--btn-ink);border:0;border-radius:12px;padding:14px;font-weight:600}
+.err{color:var(--bad);font-size:13px;min-height:18px;margin:0 0 8px}
+.note{color:var(--mute);font-size:13px;margin-top:28px}
+@media (prefers-reduced-motion:reduce){.sheet,.scrim{transition:none}}
+</style>
+</head>
+<body>
+<main id="app"></main>
+<nav><div>
+<button class="tab" data-tab="home">Overview</button>
+<button class="tab" data-tab="activity">Activity</button>
+<button class="tab" data-tab="budgets">Budgets</button>
+<button class="add" id="open">Add</button>
+</div></nav>
+<div class="scrim" id="scrim"></div>
+<div class="sheet" id="sheet" role="dialog" aria-label="Add transaction" aria-hidden="true">
+<div class="seg"><button id="tOut" aria-pressed="true">Expense</button><button id="tIn" aria-pressed="false">Income</button></div>
+<input id="amt" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00" aria-label="Amount">
+<div class="chips" id="chips"></div>
+<input id="note" type="text" maxlength="60" placeholder="Note (optional)" aria-label="Note">
+<p class="err" id="err"></p>
+<button class="go" id="save">Add transaction</button>
+</div>
+<script>
+const CATS={Housing:["🏠",1400],Groceries:["🛒",450],Dining:["🍜",200],Transport:["🚇",120],Fun:["🎟️",150],Health:["💊",80]};
+const now=new Date(),Y=now.getFullYear(),M=now.getMonth(),D=now.getDate(),DIM=new Date(Y,M+1,0).getDate(),FR=D/DIM;
+const pre=Y+"-"+String(M+1).padStart(2,"0")+"-";
+const dstr=d=>pre+String(Math.max(1,Math.min(D,d))).padStart(2,"0");
+const m0=n=>new Intl.NumberFormat("en-US",{style:"currency",currency:"USD",maximumFractionDigits:0}).format(n);
+const m2=n=>new Intl.NumberFormat("en-US",{style:"currency",currency:"USD"}).format(n);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const KEY="tally-demo-"+pre;
+let S=null;
+try{S=JSON.parse(localStorage.getItem(KEY)||"null")}catch(e){}
+if(!S||!S.tx){
+  const l={};Object.keys(CATS).forEach(k=>l[k]=CATS[k][1]);
+  S={limits:l,n:20,tx:[
+    {id:1,d:dstr(1),t:"in",c:"Income",a:3400,n:"Paycheck"},
+    {id:2,d:dstr(1),t:"out",c:"Housing",a:1250,n:"Rent"},
+    {id:3,d:dstr(D-2),t:"out",c:"Groceries",a:86.4,n:"Farmers market"},
+    {id:4,d:dstr(D-6),t:"out",c:"Groceries",a:112.15,n:"Weekly shop"},
+    {id:5,d:dstr(D-1),t:"out",c:"Dining",a:34.5,n:"Ramen night"},
+    {id:6,d:dstr(D-5),t:"out",c:"Dining",a:58,n:"Brunch"},
+    {id:7,d:dstr(D-3),t:"out",c:"Transport",a:45,n:"Transit pass top-up"},
+    {id:8,d:dstr(D-4),t:"out",c:"Fun",a:62,n:"Concert tickets"},
+    {id:9,d:dstr(D-7),t:"out",c:"Health",a:24.99,n:"Pharmacy"}]};
+}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+let tab="home",kind="out",cat="Groceries";
+const spent=c=>S.tx.filter(x=>x.t==="out"&&x.c===c).reduce((a,x)=>a+x.a,0);
+const stat=(s,l)=>s>l?"bad":(s>l*FR?"warn":"");
+function bar(s,l){const p=Math.min(100,l?s/l*100:0);return `<div class="track"><div class="fill ${stat(s,l)}" style="width:${p}%"></div><div class="tick" style="left:${FR*100}%"></div></div>`}
+function txRow(x,del){return `<div class="tx"><div>${esc(x.n||x.c)}<small>${x.c} · ${new Date(x.d+"T12:00").toLocaleDateString("en-US",{month:"short",day:"numeric"})}</small></div><div><span class="amt ${x.t}">${x.t==="in"?"+":"−"}${m2(x.a)}</span>${del?`<button class="del" data-del="${x.id}" aria-label="Delete transaction">Delete</button>`:""}</div></div>`}
+const sorted=()=>S.tx.slice().sort((a,b)=>b.d.localeCompare(a.d)||b.id-a.id);
+function render(){
+  document.querySelectorAll(".tab").forEach(b=>b.setAttribute("aria-current",b.dataset.tab===tab));
+  const lim=Object.values(S.limits).reduce((a,b)=>a+b,0);
+  const sp=Object.keys(CATS).reduce((a,c)=>a+spent(c),0);
+  const left=lim-sp,days=DIM-D+1,safe=left/days;
+  const mon=now.toLocaleDateString("en-US",{month:"long",year:"numeric"});
+  let h=`<header><b>Tally</b><span>${mon}</span></header>`;
+  if(tab==="home"){
+    h+=`<section class="hero"><p>${left<0?"Over budget by":"Safe to spend today"}</p><div class="big ${left<0?"bad":""}">${m0(left<0?-left:safe)}</div><p>${left<0?"You’ve passed this month’s total budget.":m0(left)+" left this month, "+days+(days===1?" day":" days")+" to go"}</p>
+    <div class="track"><div class="fill ${stat(sp,lim)}" style="width:${Math.min(100,sp/lim*100)}%"></div><div class="tick" style="left:${FR*100}%"></div></div>
+    <div class="cap"><span>${m0(sp)} spent</span><span>Line marks today’s pace</span></div></section>
+    <h2>Categories</h2>`;
+    h+=Object.keys(CATS).map(c=>{const s=spent(c),l=S.limits[c],r=l-s;return `<div class="row"><div class="top"><span>${CATS[c][0]} ${c}</span><span>${r<0?m0(-r)+" over":m0(r)+" left"}</span></div>${bar(s,l)}<div class="sub">${m0(s)} of ${m0(l)}</div></div>`}).join("");
+    h+=`<h2>Recent</h2>`+(S.tx.length?sorted().slice(0,3).map(x=>txRow(x,false)).join(""):`<div class="empty">No transactions yet. Tap Add to log your first one.</div>`);
+    h+=`<p class="note">Demo data. Changes save in this browser only.</p>`;
+  }else if(tab==="activity"){
+    h+=`<h2 style="margin-top:0">All activity</h2>`+(S.tx.length?sorted().map(x=>txRow(x,true)).join(""):`<div class="empty">No transactions yet. Tap Add to log your first one.</div>`);
+  }else{
+    h+=`<h2 style="margin-top:0">Monthly limits</h2><p class="sub" style="color:var(--mute);margin:0 0 8px">Total: ${m0(lim)}</p>`+Object.keys(CATS).map(c=>`<div class="lim"><label for="l-${c}">${CATS[c][0]} ${c}</label><input id="l-${c}" data-lim="${c}" type="number" inputmode="numeric" min="0" value="${S.limits[c]}"></div>`).join("");
+  }
+  document.getElementById("app").innerHTML=h;
+}
+document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>{tab=b.dataset.tab;render();window.scrollTo(0,0)});
+const app=document.getElementById("app");
+app.addEventListener("click",e=>{const d=e.target.closest("[data-del]");if(d){S.tx=S.tx.filter(x=>x.id!=d.dataset.del);save();render()}});
+app.addEventListener("change",e=>{const c=e.target.dataset.lim;if(c){S.limits[c]=Math.max(0,parseFloat(e.target.value)||0);save();render();const el=document.getElementById("l-"+c);if(el)el.focus()}});
+const sheet=document.getElementById("sheet"),scrim=document.getElementById("scrim"),err=document.getElementById("err");
+function chips(){const list=kind==="in"?["Income"]:Object.keys(CATS);if(!list.includes(cat))cat=list[0];document.getElementById("chips").innerHTML=list.map(c=>`<button class="chip" data-c="${c}" aria-pressed="${c===cat}">${c}</button>`).join("")}
+function setKind(k){kind=k;document.getElementById("tOut").setAttribute("aria-pressed",k==="out");document.getElementById("tIn").setAttribute("aria-pressed",k==="in");chips()}
+function open(o){sheet.classList.toggle("on",o);scrim.classList.toggle("on",o);sheet.setAttribute("aria-hidden",!o);if(o){err.textContent="";chips();setTimeout(()=>document.getElementById("amt").focus(),250)}}
+document.getElementById("open").onclick=()=>open(true);
+scrim.onclick=()=>open(false);
+document.addEventListener("keydown",e=>{if(e.key==="Escape")open(false)});
+document.getElementById("tOut").onclick=()=>setKind("out");
+document.getElementById("tIn").onclick=()=>setKind("in");
+document.getElementById("chips").onclick=e=>{const c=e.target.dataset.c;if(c){cat=c;chips()}};
+document.getElementById("save").onclick=()=>{
+  const a=parseFloat(document.getElementById("amt").value);
+  if(!(a>0)){err.textContent="Enter an amount greater than 0.";return}
+  S.tx.push({id:S.n++,d:dstr(D),t:kind,c:cat,a:Math.round(a*100)/100,n:document.getElementById("note").value.trim()});
+  save();document.getElementById("amt").value="";document.getElementById("note").value="";open(false);tab=tab==="budgets"?"home":tab;render();
+};
+render();
+</script>
+</body>
+</html>
